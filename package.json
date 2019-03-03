@@ -1,0 +1,21 @@
+{
+  "name": "retro-drop-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^3.0.4",
+    "dotenv": "^6.2.0",
+    "express": "^4.16.4",
+    "moment": "^2.24.0",
+    "serverless-http": "^1.9.1",
+    "shortid": "^2.2.14",
+    "uuid-apikey": "^1.4.2"
+  }
+}
