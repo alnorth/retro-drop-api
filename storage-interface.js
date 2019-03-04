@@ -1,5 +1,5 @@
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const moment = require('moment');
 
@@ -19,8 +19,10 @@ class StorageInterface {
   }
 
   async registerNewDevice(deviceId, apiKey) {
+    let salt = await bcrypt.genSalt(10);
+
     this.data.devices[deviceId] = {
-      hashedApiKey: await bcrypt.hash(apiKey, 10),
+      hashedApiKey: await bcrypt.hash(apiKey, salt),
       created: moment()
     };
     this.saveData();
