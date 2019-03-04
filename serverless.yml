@@ -1,0 +1,19 @@
+service: retro-drop-api
+
+provider:
+  name: aws
+  region: eu-west-2
+  runtime: nodejs8.10
+  stage: dev
+  profile: retro-drop
+  memorySize: 256 # We're not doing anything complicated here.
+
+# Routing logic is handled by express.
+functions:
+  app:
+    handler: index.handler
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+    environment:
+      NODE_ENV: production

@@ -8,7 +8,14 @@ class StorageInterface {
   constructor() {
     // For now we just store things in memory. This won't do at all when we're live though. Switch to
     // SimpleDB when we have our AWS account back.
-    this.data = require('./test-data.json');
+    try {
+      this.data = require('./test-data.json');
+    } catch (error) {
+      this.data = {
+        devices: {},
+        connectionTokens: {}
+      };
+    }
   }
 
   async registerNewDevice(deviceId, apiKey) {

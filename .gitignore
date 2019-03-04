@@ -1,2 +1,4 @@
+.env
+.serverless
 node_modules
 test-data.json
