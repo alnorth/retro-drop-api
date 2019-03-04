@@ -4,7 +4,7 @@ provider:
   name: aws
   region: eu-west-2
   runtime: nodejs8.10
-  stage: dev
+  stage: production
   profile: retro-drop
   memorySize: 256 # We're not doing anything complicated here.
 
@@ -17,3 +17,14 @@ functions:
       - http: 'ANY {proxy+}'
     environment:
       NODE_ENV: production
+
+plugins:
+  - serverless-domain-manager
+
+custom:
+  customDomain:
+    domainName: api.retrodropapp.com
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    certificateName: '*.retrodropapp.com'
