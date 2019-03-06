@@ -1,6 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
-const moment = require('moment');
+const { DateTime } = require("luxon");
 const serverless = require('serverless-http');
 const shortid = require('shortid');
 const uuidAPIKey = require('uuid-apikey');
@@ -28,20 +28,22 @@ let deviceRouter = express.Router({ mergeParams: true });
 
 deviceRouter.use(async function (req, res, next) {
   let deviceId = req.params.deviceId;
-  if (!await storage.isDeviceIdValid(deviceId)) {
+  let device = await storage.getDeviceDetails(deviceId);
+  if (!device) {
     res.status(404).send({ error: 'Device does not exist.' });
   } else if (!req.header('Authorization')) {
     res.status(401).send({ error: 'No Authorization header was supplied.' });
-  } else if (!await storage.isApiKeyValid(deviceId, req.header('Authorization').slice(7))) {
+  } else if (!await storage.isApiKeyValid(device.hashedApiKey, req.header('Authorization').slice(7))) {
     res.status(401).send({ error: 'The provided API key was not valid.' });
   } else {
+    res.locals.device = device;
     next();
   }
 });
 
 deviceRouter.get('/connection-token', async function (req, res) {
   let connectionToken = crypto.randomBytes(4).toString('hex').toUpperCase();
-  let expires = moment().add(2, 'hours');
+  let expires = DateTime.utc().plus({ hours: 2 });
 
   await storage.storeConnectionToken(req.params.deviceId, connectionToken, expires);
 
@@ -52,10 +54,8 @@ deviceRouter.get('/connection-token', async function (req, res) {
 });
 
 deviceRouter.get('/details', async function (req, res) {
-  let details = await storage.getDeviceDetails(req.params.deviceId);
-
-  if (details) {
-    res.send(details);  
+  if (res.locals.device.details) {
+    res.send(res.locals.device.details);  
   } else {
     res.status(404).send({ error: 'Device has not yet been connected.' });
   }

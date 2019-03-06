@@ -1,63 +1,58 @@
 
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
-const moment = require('moment');
+const AWS = require('aws-sdk');
+const { DateTime } = require("luxon");
+
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 class StorageInterface {
-
-  constructor() {
-    // For now we just store things in memory. This won't do at all when we're live though. Switch to
-    // SimpleDB when we have our AWS account back.
-    try {
-      this.data = require('./test-data.json');
-    } catch (error) {
-      this.data = {
-        devices: {},
-        connectionTokens: {}
-      };
-    }
-  }
 
   async registerNewDevice(deviceId, apiKey) {
     let salt = await bcrypt.genSalt(10);
 
-    this.data.devices[deviceId] = {
-      hashedApiKey: await bcrypt.hash(apiKey, salt),
-      created: moment()
+    const params = {
+      TableName: process.env.DEVICES_TABLE_NAME,
+      Item: {
+        deviceId,
+        hashedApiKey: await bcrypt.hash(apiKey, salt),
+        created: DateTime.utc().toISO()
+      }
     };
-    this.saveData();
+
+    await dynamoDb.put(params).promise();
   }
 
-  async isDeviceIdValid(deviceId) {
-    return !!this.data.devices[deviceId];
+  async getDeviceDetails(deviceId) {
+    const params = {
+      TableName: process.env.DEVICES_TABLE_NAME,
+      Key: {
+        deviceId: deviceId
+      }
+    };
+
+    let response = await dynamoDb.get(params).promise();
+
+    return response.Item || false;
   }
 
-  async isApiKeyValid(deviceId, apiKey) {
-    let storedHash = this.data.devices[deviceId].hashedApiKey;
+  async isApiKeyValid(storedHash, apiKey) {
     return await bcrypt.compare(apiKey, storedHash);
   }
 
   async storeConnectionToken(deviceId, connectionToken, expires) {
-    this.data.connectionTokens[connectionToken] = {
-      deviceId,
-      expires,
-      created: moment()
+    const params = {
+      TableName: process.env.CONNECTION_TOKENS_TABLE_NAME,
+      Item: {
+        connectionToken,
+        deviceId,
+        expires: expires.toISO(),
+        created: DateTime.utc().toISO()
+      }
     };
-    this.saveData();
-  }
 
-  async getDeviceDetails(deviceId) {
-    if (this.data.devices[deviceId].details) {
-      return this.data.devices[deviceId].details;
-    } else {
-      return false;
-    }
+    await dynamoDb.put(params).promise();
   }
-
-  saveData() {
-    fs.writeFileSync('./test-data.json', JSON.stringify(this.data, true, 2));
-  }
-
 }
 
 module.exports = StorageInterface;

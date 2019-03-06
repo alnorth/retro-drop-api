@@ -7,6 +7,24 @@ provider:
   stage: production
   profile: retro-drop
   memorySize: 256 # We're not doing anything complicated here.
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["ConnectionTokensDynamoDBTable", "Arn" ] }
+        - { "Fn::GetAtt": ["DevicesDynamoDBTable", "Arn" ] }
+        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    CONNECTION_TOKENS_TABLE_NAME: ${self:custom.tableNames.connectionTokens}
+    DEVICES_TABLE_NAME: ${self:custom.tableNames.devices}
+    USERS_TABLE_NAME: ${self:custom.tableNames.users}
 
 # Routing logic is handled by express.
 functions:
@@ -15,8 +33,6 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
-    environment:
-      NODE_ENV: production
 
 plugins:
   - serverless-domain-manager
@@ -28,3 +44,49 @@ custom:
     stage: ${self:provider.stage}
     createRoute53Record: true
     certificateName: '*.retrodropapp.com'
+  tableNames:
+    connectionTokens: 'connection-tokens-table-${self:provider.stage}'
+    devices: 'devices-table-${self:provider.stage}'
+    users: 'users-table-${self:provider.stage}'
+
+resources:
+  Resources:
+    ConnectionTokensDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: connectionToken
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: connectionToken
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableNames.connectionTokens}
+    DevicesDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: deviceId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: deviceId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableNames.devices}
+    UsersDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableNames.users}
