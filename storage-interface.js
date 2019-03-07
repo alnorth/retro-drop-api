@@ -3,8 +3,9 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const AWS = require('aws-sdk');
 const { DateTime } = require("luxon");
+const shortid = require('shortid');
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const ddb = new AWS.DynamoDB.DocumentClient();
 
 class StorageInterface {
 
@@ -16,11 +17,11 @@ class StorageInterface {
       Item: {
         deviceId,
         hashedApiKey: await bcrypt.hash(apiKey, salt),
-        created: DateTime.utc().toISO()
+        created: epochTime()
       }
     };
 
-    await dynamoDb.put(params).promise();
+    await ddb.put(params).promise();
   }
 
   async getDeviceDetails(deviceId) {
@@ -31,7 +32,7 @@ class StorageInterface {
       }
     };
 
-    let response = await dynamoDb.get(params).promise();
+    let response = await ddb.get(params).promise();
 
     return response.Item || false;
   }
@@ -46,26 +47,63 @@ class StorageInterface {
       Item: {
         connectionToken,
         deviceId,
-        expires: expires.toISO(),
-        created: DateTime.utc().toISO()
+        expires: epochTime(expires),
+        created: epochTime()
       }
     };
 
-    await dynamoDb.put(params).promise();
+    await ddb.put(params).promise();
   }
 
-  async registerNewUser(userId, dropboxAccountId, dropboxAccessToken) {
-    const params = {
-      TableName: process.env.USERS_TABLE_NAME,
-      Item: {
-        userId,
-        dropboxAccountId,
-        dropboxAccessToken
-      }
-    };
+  async userFromDropboxDetails(dropboxAccountId, dropboxAccessToken) {
+    // First check if this user exists already.
 
-    await dynamoDb.put(params).promise();
+    let existingUserResult = await ddb.query({
+      ExpressionAttributeValues: {
+        ':dropboxAccountId' : dropboxAccountId
+      },
+      KeyConditionExpression: 'dropboxAccountId = :dropboxAccountId',
+      ProjectionExpression: 'userId',
+      TableName: process.env.USERS_TABLE_NAME,
+      IndexName: 'by-dropbox-id',
+      Limit: 1
+    }).promise();
+
+    let existingUserFound = existingUserResult.Items.length === 1;
+    let userId = existingUserFound ? existingUserResult.Items[0].userId : shortid.generate();
+
+    if (existingUserFound) {
+      // The access token will have changed, so we might as well update it.
+      await ddb.update({
+        TableName: process.env.USERS_TABLE_NAME,
+        Key: { userId },
+        UpdateExpression: 'set dropboxAccessToken = :t, updated = :u',
+        ExpressionAttributeValues: {
+          ':t' : dropboxAccessToken,
+          ':u' : epochTime()
+        }
+      }).promise();
+    } else {
+      await ddb.put({
+        TableName: process.env.USERS_TABLE_NAME,
+        Item: {
+          userId,
+          dropboxAccountId,
+          dropboxAccessToken,
+          created: epochTime(),
+          updated: epochTime()
+        }
+      }).promise();
+    }
+
+    return userId;
   }
 }
 
 module.exports = StorageInterface;
+
+// ---
+
+function epochTime(luxonObj = DateTime.utc()) {
+  return Math.round(luxonObj.toSeconds());
+}

@@ -20,6 +20,9 @@ provider:
         - { "Fn::GetAtt": ["ConnectionTokensDynamoDBTable", "Arn" ] }
         - { "Fn::GetAtt": ["DevicesDynamoDBTable", "Arn" ] }
         - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+        - { "Fn::Join": [ "/", [ 
+            { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }, "index", "by-dropbox-id" 
+          ]]}
   environment:
     NODE_ENV: ${self:provider.stage}
     CONNECTION_TOKENS_TABLE_NAME: ${self:custom.tableNames.connectionTokens}

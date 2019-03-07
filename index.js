@@ -40,8 +40,7 @@ app.get('/dropbox/oauth/return', async function (req, res) {
   let userDbx = new Dropbox({ fetch, accessToken });
   let dropboxUser = await userDbx.usersGetCurrentAccount();
 
-  let userId = shortid.generate();
-  await storage.registerNewUser(userId, dropboxUser.account_id, accessToken);
+  let userId = await storage.userFromDropboxDetails(dropboxUser.account_id, accessToken);
 
   res.send({ userId, dropboxUser });
 });
