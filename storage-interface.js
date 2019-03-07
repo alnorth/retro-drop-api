@@ -65,7 +65,7 @@ class StorageInterface {
       KeyConditionExpression: 'dropboxAccountId = :dropboxAccountId',
       ProjectionExpression: 'userId',
       TableName: process.env.USERS_TABLE_NAME,
-      IndexName: 'by-dropbox-id',
+      IndexName: 'dropboxAccountIdIndex',
       Limit: 1
     }).promise();
 
