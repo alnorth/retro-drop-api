@@ -42,8 +42,11 @@ app.get('/dropbox/oauth/return', async function (req, res) {
 app.post('/device', async function (req, res) {
   let deviceId = shortid.generate();
   let apiKey = uuidAPIKey.create().apiKey;
+  // We don't want lots of unconnected devices hanging around in our database. They can always
+  // request a new ID and API key.
+  let expires = DateTime.utc().plus({ days: 5 });
 
-  await storage.registerNewDevice(deviceId, apiKey);
+  await storage.registerNewDevice(deviceId, apiKey, expires);
 
   res.send({
     deviceId,

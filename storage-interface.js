@@ -9,7 +9,7 @@ const ddb = new AWS.DynamoDB.DocumentClient();
 
 class StorageInterface {
 
-  async registerNewDevice(deviceId, apiKey) {
+  async registerNewDevice(deviceId, apiKey, expires) {
     let salt = await bcrypt.genSalt(10);
 
     const params = {
@@ -17,6 +17,7 @@ class StorageInterface {
       Item: {
         deviceId,
         hashedApiKey: await bcrypt.hash(apiKey, salt),
+        expires: epochTime(expires),
         created: epochTime()
       }
     };
