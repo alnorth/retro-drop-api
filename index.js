@@ -16,15 +16,12 @@ const dbx = new Dropbox({
   clientId: process.env.DROPBOX_APP_KEY,
   clientSecret: process.env.DROPBOX_APP_SECRET
 });
+const dropboxRedirectUrl = `https://${process.env.DOMAIN_NAME}/dropbox/oauth/return`;
 
 // Following https://serverless.com/blog/serverless-express-rest-api/.
 
 app.get('/dropbox/oauth/signup-url', function (req, res) {
-  let url = dbx.getAuthenticationUrl(
-    `https://${req.headers.host}/dropbox/oauth/return`,
-    null,
-    'code'
-  );
+  let url = dbx.getAuthenticationUrl(dropboxRedirectUrl, null, 'code');
 
   res.send({ url });
 });
@@ -32,10 +29,7 @@ app.get('/dropbox/oauth/signup-url', function (req, res) {
 app.get('/dropbox/oauth/return', async function (req, res) {
   let code = req.query.code;
 
-  let accessToken = await dbx.getAccessTokenFromCode(
-    `https://${req.headers.host}/dropbox/oauth/return`,
-    req.query.code
-  );
+  let accessToken = await dbx.getAccessTokenFromCode(dropboxRedirectUrl, req.query.code);
 
   let userDbx = new Dropbox({ fetch, accessToken });
   let dropboxUser = await userDbx.usersGetCurrentAccount();
@@ -96,7 +90,4 @@ deviceRouter.get('/details', async function (req, res) {
 
 app.use('/device/:deviceId', deviceRouter);
 
-if (process.env.NODE_ENV === 'development') {
-  app.listen(3001);
-}
 module.exports.handler = serverless(app);

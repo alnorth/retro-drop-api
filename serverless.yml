@@ -4,7 +4,7 @@ provider:
   name: aws
   region: eu-west-2
   runtime: nodejs8.10
-  stage: production
+  stage: ${self:custom.stage}
   profile: retro-drop
   memorySize: 256 # We're not doing anything complicated here.
   iamRoleStatements:
@@ -24,7 +24,8 @@ provider:
             { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }, "index", "by-dropbox-id" 
           ]]}
   environment:
-    NODE_ENV: ${self:provider.stage}
+    NODE_ENV: ${self:custom.stage}
+    DOMAIN_NAME: ${self:custom.customDomain.domainName}
     CONNECTION_TOKENS_TABLE_NAME: ${self:custom.tableNames.connectionTokens}
     DEVICES_TABLE_NAME: ${self:custom.tableNames.devices}
     USERS_TABLE_NAME: ${self:custom.tableNames.users}
@@ -44,16 +45,20 @@ plugins:
   - serverless-domain-manager
 
 custom:
+  stage: ${opt:stage, 'development'}
+  domains:
+    production: api.retrodropapp.com
+    development: dev-api.retrodropapp.com
   customDomain:
-    domainName: api.retrodropapp.com
+    domainName: ${self:custom.domains.${self:custom.stage}}
     basePath: ''
-    stage: ${self:provider.stage}
+    stage: ${self:custom.stage}
     createRoute53Record: true
     certificateName: '*.retrodropapp.com'
   tableNames:
-    connectionTokens: 'connection-tokens-table-${self:provider.stage}'
-    devices: 'devices-table-${self:provider.stage}'
-    users: 'users-table-${self:provider.stage}'
+    connectionTokens: 'connection-tokens-table-${self:custom.stage}'
+    devices: 'devices-table-${self:custom.stage}'
+    users: 'users-table-${self:custom.stage}'
 
 resources:
   Resources:
