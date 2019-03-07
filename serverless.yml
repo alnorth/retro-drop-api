@@ -58,12 +58,10 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          -
-            AttributeName: connectionToken
+          - AttributeName: connectionToken
             AttributeType: S
         KeySchema:
-          -
-            AttributeName: connectionToken
+          - AttributeName: connectionToken
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.tableNames.connectionTokens}
@@ -71,12 +69,10 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          -
-            AttributeName: deviceId
+          - AttributeName: deviceId
             AttributeType: S
         KeySchema:
-          -
-            AttributeName: deviceId
+          - AttributeName: deviceId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.tableNames.devices}
@@ -84,12 +80,19 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          -
-            AttributeName: userId
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: dropboxAccountId
             AttributeType: S
         KeySchema:
-          -
-            AttributeName: userId
+          - AttributeName: userId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.tableNames.users}
+        GlobalSecondaryIndexes:
+          - IndexName: by-dropbox-id
+            KeySchema:
+              - AttributeName: dropboxAccountId
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
