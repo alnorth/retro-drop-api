@@ -20,10 +20,8 @@ const dropboxRedirectUrl = `https://${process.env.DOMAIN_NAME}/dropbox/oauth/ret
 
 // Following https://serverless.com/blog/serverless-express-rest-api/.
 
-app.get('/dropbox/oauth/signup-url', function (req, res) {
-  let url = dbx.getAuthenticationUrl(dropboxRedirectUrl, null, 'code');
-
-  res.send({ url });
+app.get('/dropbox/oauth/start', function (req, res) {
+  res.redirect(dbx.getAuthenticationUrl(dropboxRedirectUrl, null, 'code'));
 });
 
 app.get('/dropbox/oauth/return', async function (req, res) {
@@ -36,7 +34,7 @@ app.get('/dropbox/oauth/return', async function (req, res) {
 
   let userId = await storage.userFromDropboxDetails(dropboxUser.account_id, accessToken);
 
-  res.send({ userId, dropboxUser });
+  res.redirect(process.env.WEBAPP_URL);
 });
 
 app.post('/device', async function (req, res) {

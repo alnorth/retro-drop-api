@@ -26,6 +26,7 @@ provider:
   environment:
     NODE_ENV: ${self:custom.stage}
     DOMAIN_NAME: ${self:custom.customDomain.domainName}
+    WEBAPP_URL: https://${self:custom.webDomains.${self:custom.stage}}/dashboard
     CONNECTION_TOKENS_TABLE_NAME: ${self:custom.tableNames.connectionTokens}
     DEVICES_TABLE_NAME: ${self:custom.tableNames.devices}
     USERS_TABLE_NAME: ${self:custom.tableNames.users}
@@ -46,11 +47,14 @@ plugins:
 
 custom:
   stage: ${opt:stage, 'development'}
-  domains:
+  webDomains:
+    production: www.retrodropapp.com
+    development: dev-www.retrodropapp.com
+  apiDomains:
     production: api.retrodropapp.com
     development: dev-api.retrodropapp.com
   customDomain:
-    domainName: ${self:custom.domains.${self:custom.stage}}
+    domainName: ${self:custom.apiDomains.${self:custom.stage}}
     basePath: ''
     stage: ${self:custom.stage}
     createRoute53Record: true
