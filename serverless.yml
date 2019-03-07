@@ -25,6 +25,9 @@ provider:
     CONNECTION_TOKENS_TABLE_NAME: ${self:custom.tableNames.connectionTokens}
     DEVICES_TABLE_NAME: ${self:custom.tableNames.devices}
     USERS_TABLE_NAME: ${self:custom.tableNames.users}
+    # See https://serverless.com/blog/serverless-secrets-api-keys/ for details on ssm
+    DROPBOX_APP_KEY: ${ssm:/retro-drop/dropbox-app-key}
+    DROPBOX_APP_SECRET: ${ssm:/retro-drop/dropbox-app-secret~true}
 
 # Routing logic is handled by express.
 functions:

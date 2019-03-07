@@ -12,8 +12,9 @@
   "dependencies": {
     "aws-sdk": "^2.416.0",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^6.2.0",
+    "dropbox": "^4.0.16",
     "express": "^4.16.4",
+    "isomorphic-fetch": "^2.2.1",
     "luxon": "^1.11.4",
     "serverless-http": "^1.9.1",
     "shortid": "^2.2.14",

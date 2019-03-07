@@ -1,16 +1,50 @@
 const express = require('express');
 const crypto = require('crypto');
+const querystring = require('querystring');
 const { DateTime } = require("luxon");
 const serverless = require('serverless-http');
 const shortid = require('shortid');
 const uuidAPIKey = require('uuid-apikey');
+const fetch = require('isomorphic-fetch');
+const Dropbox = require('dropbox').Dropbox;
 const StorageInterface = require('./storage-interface');
 
 const app = express();
 const storage = new StorageInterface();
-require('dotenv').config();
+const dbx = new Dropbox({
+  fetch: fetch,
+  clientId: process.env.DROPBOX_APP_KEY,
+  clientSecret: process.env.DROPBOX_APP_SECRET
+});
 
 // Following https://serverless.com/blog/serverless-express-rest-api/.
+
+app.get('/dropbox/oauth/signup-url', function (req, res) {
+  let url = dbx.getAuthenticationUrl(
+    `https://${req.headers.host}/dropbox/oauth/return`,
+    null,
+    'code'
+  );
+
+  res.send({ url });
+});
+
+app.get('/dropbox/oauth/return', async function (req, res) {
+  let code = req.query.code;
+
+  let accessToken = await dbx.getAccessTokenFromCode(
+    `https://${req.headers.host}/dropbox/oauth/return`,
+    req.query.code
+  );
+
+  let userDbx = new Dropbox({ fetch, accessToken });
+  let dropboxUser = await userDbx.usersGetCurrentAccount();
+
+  let userId = shortid.generate();
+  await storage.registerNewUser(userId, dropboxUser.account_id, accessToken);
+
+  res.send({ userId, dropboxUser });
+});
 
 app.post('/device', async function (req, res) {
   let deviceId = shortid.generate();

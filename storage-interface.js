@@ -53,6 +53,19 @@ class StorageInterface {
 
     await dynamoDb.put(params).promise();
   }
+
+  async registerNewUser(userId, dropboxAccountId, dropboxAccessToken) {
+    const params = {
+      TableName: process.env.USERS_TABLE_NAME,
+      Item: {
+        userId,
+        dropboxAccountId,
+        dropboxAccessToken
+      }
+    };
+
+    await dynamoDb.put(params).promise();
+  }
 }
 
 module.exports = StorageInterface;
